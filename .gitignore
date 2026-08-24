@@ -1,0 +1,30 @@
+# =====================================================================
+# .gitignore for the by-product-exchange R project
+#
+# Anything listed here will NOT be uploaded to GitHub. Comments (lines
+# starting with #) are for humans only; Git ignores them.
+# =====================================================================
+
+# ---- Raw survey data (confidential) ----------------------------------
+*.xlsx
+*.xls
+inputs/waste_tidy.RData
+
+# ---- IMPORTANT EXCEPTIONS -------------------------------------------
+# codebook.xlsx holds the sector, owner-role and volume-band lookup
+# tables. Script 02 cannot run without it and it contains no personal
+# data, so it must NOT be ignored. The "!" means "keep this one".
+!inputs/codebook.xlsx
+
+# The de-identified file that IS published.
+!inputs/waste_tidy.RData
+
+# ---- R and RStudio working files -------------------------------------
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# ---- System files ----------------------------------------------------
+.DS_Store
+Thumbs.db
