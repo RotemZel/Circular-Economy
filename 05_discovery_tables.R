@@ -62,10 +62,6 @@ tab_discovery <- datasummary(
 writeLines(tab_discovery, here("outputs", "tab_discovery.tex"))
 cat("\ntab_discovery.tex written to outputs/\n")
 
-## The version of this table in the manuscript is finished by hand (the float,
-## the caption, the \label and the two italic block headings are added there),
-## so check the numbers below against it rather than replacing the file blindly.
-
 ## the three figures quoted in the Results and the Conclusions
 found_shares <- prop.table(table(discovery$found_via))
 cat("\ntaker-initiated:", round(100 * found_shares[["Taker approached the generator"]], 1), "%",
