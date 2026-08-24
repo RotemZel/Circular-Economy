@@ -132,11 +132,6 @@ screen %>%
                label   = "screen") %>%   # writes \label{tab:screen} in the caption
   writeLines(here("outputs", "tab_screen_raw.tex"))
 
-# NOTE: `reduces` shows the strongest association but is excluded from every
-# model below. The follow-up question shows that businesses reporting they
-# reduce waste do so mainly BY passing material to another business, so the
-# item restates the outcome instead of explaining it.
-
 ################################################################################
 #--------------- 3. material streams: which ones go with transfer --------------
 ################################################################################
@@ -173,14 +168,6 @@ print(streams, digits = 3)
 # Two specifications:
 #   parsimonious = waste character and local knowledge only
 #   full         = adds waste oils, town, size, age, sex, storage capacity
-#
-# The models are named here and used everywhere below, including in the tables
-# in section 8, so the paper cannot report a model that was not estimated.
-
-# Each model is written out on its own rather than fitted in a loop. A model has
-# to remember the call that produced it, because r2_mcfadden() and update()
-# below refit it, and a model fitted inside lapply() remembers only "FUN(...)"
-# and fails at that point.
 
 models <- list(
   
@@ -237,10 +224,6 @@ print(fit_stats, digits = 3)
 #-------------------------------------------------------------------------------
 # 4.1. does adding the other three streams change anything?
 #-------------------------------------------------------------------------------
-# If fibre, plastic or durable mattered, leaving them out would be wrong.
-# A large p-value and a HIGHER AIC mean they are not worth keeping.
-# The three added streams have no missing values, so both versions of each
-# model use the same businesses and can be compared directly.
 
 for (this_model in main_names) {
   
@@ -264,9 +247,7 @@ print(hoslem.test(model.response(model.frame(models[["transfer parsimonious"]]))
                   fitted(models[["transfer parsimonious"]]), g = 10))
 print(check_collinearity(models[["transfer full"]]))
 
-# link test for functional form: refit each outcome on the model's linear
-# predictor and its square. A small p-value on the squared term would mean
-# the logit shape is wrong; a large one means the specification is adequate.
+# link test for functional form
 for (m in c("transfer parsimonious", "willing_tr parsimonious")) {
   lp <- predict(models[[m]])
   y  <- model.response(model.frame(models[[m]]))
@@ -274,9 +255,7 @@ for (m in c("transfer parsimonious", "willing_tr parsimonious")) {
   print(summary(glm(y ~ lp + I(lp^2), family = binomial))$coefficients)
 }
 
-# cross-validated AUC, using caret instead of a hand-written fold loop.
-# caret needs the outcome as a factor with text labels, not 0/1.
-# The folds are drawn at random, so the seed is set here as well.
+# cross-validated AUC
 set.seed(seed)
 print(train(
   factor(transfer, levels = c(0, 1), labels = c("no", "yes")) ~
@@ -306,11 +285,7 @@ print(summary(pool(with(
 ################################################################################
 #--------------- 5. multilevel model: does the town explain anything? ----------
 ################################################################################
-# Businesses sit inside three towns. A random intercept splits the unexplained
-# variation into a between-town part and a within-town part. The ICC is the
-# between-town share: a small ICC means the town hardly matters, and the
-# differences are between businesses instead.
-#
+# Businesses sit inside three towns.#
 # With only three towns, plain glmer collapses the variance to zero, so bglmer
 # with a weak prior on the between-town standard deviation is used for the
 # reported model (Chung et al. 2013).
