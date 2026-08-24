@@ -36,12 +36,6 @@ library(ResourceSelection) # Hosmer-Lemeshow goodness of fit
 library(psych)             # Cohen's kappa
 library(ggthemes)          # colourblind-safe palette for the figure
 library(modelsummary)      # writes the LaTeX tables
-# modelsummary version 2 and later writes LaTeX in the tabularray format by
-# default, which the manuscript preamble does not load. The option below pins
-# the older booktabs format, the one the manuscript tables use. It needs the
-# kableExtra package: run install.packages("kableExtra") once if it is missing.
-# The second option stops numbers being wrapped in \num{}, which would need the
-# siunitx package that the manuscript preamble does not load.
 options(modelsummary_factory_latex = "kableExtra",
         modelsummary_format_numeric_latex = "plain")
 library(here)              # project-relative file paths
@@ -85,8 +79,7 @@ businesses %>%
 ################################################################################
 # Fisher's exact test for the categorical candidates and a Wilcoxon rank-sum
 # test for the continuous ones, then one Benjamini-Hochberg correction across
-# the whole family, because testing many variables at once produces false
-# positives. p_fdr below 0.05 means the association survives that correction.
+# the whole family
 
 set.seed(seed)   # the Fisher p-values below are simulated, so they need a seed
 
@@ -120,9 +113,6 @@ screen <- bind_rows(screen_categorical, screen_continuous) %>%
 
 print(screen, n = Inf)
 
-# export the screen for Appendix A (Table tab:screen). The row labels are
-# tidied by hand in tabs/tab_screen.tex; this file is the numerical source
-# to check it against after any change to the data.
 screen %>%
   mutate(across(c(p_raw, p_fdr), ~ formatC(.x, format = "f", digits = 3))) %>%
   knitr::kable(format = "latex", booktabs = TRUE,
@@ -135,9 +125,6 @@ screen %>%
 ################################################################################
 #--------------- 3. material streams: which ones go with transfer --------------
 ################################################################################
-# The five groups are five separate 0/1 columns. pivot_longer stacks them into
-# one column, so all five are summarised in a single pipeline.
-# gap = how many percentage points more often generators of a stream transfer.
 
 streams <- businesses %>%
   pivot_longer(c(organic, oils, durable, plastic, fibre),
@@ -154,10 +141,6 @@ streams <- businesses %>%
   arrange(desc(gap))
 
 print(streams, digits = 3)
-
-# Expect: only organic and oils have a small p_fdr. Fibre is the most commonly
-# generated stream (highest pct) but its gap is negative. These are the numbers
-# in tab_streams.tex in the appendix.
 
 ################################################################################
 #------------------- 4. logistic models: behaviour and intention ---------------
@@ -285,10 +268,6 @@ print(summary(pool(with(
 ################################################################################
 #--------------- 5. multilevel model: does the town explain anything? ----------
 ################################################################################
-# Businesses sit inside three towns.#
-# With only three towns, plain glmer collapses the variance to zero, so bglmer
-# with a weak prior on the between-town standard deviation is used for the
-# reported model (Chung et al. 2013).
 
 models[["multilevel"]] <- bglmer(
   transfer ~ volume_n + organic + oils + knows + (1 | settlement),
@@ -327,10 +306,7 @@ print(binom.test(gap_table[1, 2], gap_table[1, 2] + gap_table[2, 1]))
 # Cohen's kappa: agreement between intention and behaviour, beyond chance
 print(cohen.kappa(gap_table))
 
-# Bivariate probit: fits both outcomes together and estimates the correlation
-# between their errors. A positive correlation means the same unobserved
-# disposition drives both, so businesses that are willing but not doing are not
-# a different type of business. zero = 3 holds that correlation constant.
+# Bivariate probit
 biprobit <- vglm(
   cbind(transfer, willing_tr) ~ sector + volume_n + organic + knows +
     settlement + micro,
@@ -341,8 +317,7 @@ biprobit <- vglm(
 
 print(summary(biprobit))
 
-# VGAM reports that correlation on the rhobit scale, not as a correlation, so
-# it has to be converted back before it is quoted in the paper.
+# VGAM reports that correlation on the rhobit scale
 rhobit_value <- coef(biprobit)[grep(":3$", names(coef(biprobit)))]
 print(c(rhobit_scale = rhobit_value,
         correlation  = (exp(rhobit_value) - 1) / (exp(rhobit_value) + 1)))
@@ -373,18 +348,8 @@ print(fisher.test(table(businesses$transfer, businesses$willing_rc)))
 ################################################################################
 #------------------------ 8. export tables and figure --------------------------
 ################################################################################
-# The two options below are set again here (they are also at the top of the
-# script) so this section still writes booktabs LaTeX when it is run on its
-# own in a fresh session. Without them, modelsummary version 2 and later
-# falls back to the tabularray format, which the manuscript does not use.
 options(modelsummary_factory_latex = "kableExtra",
         modelsummary_format_numeric_latex = "plain")
-
-# modelsummary writes the LaTeX straight from the fitted models, so the numbers
-# cannot drift from the models. These files are raw exports and go to outputs/;
-# the copies in the manuscript's tabs/ folder are the same tables with the
-# layout tidied by hand (font size, placement, note width). Check the
-# numbers against outputs/, but do not overwrite tabs/ with these files.
 
 term_labels <- c(
   "(Intercept)"         = "Constant",
@@ -408,8 +373,6 @@ table_note <- paste("Heteroscedasticity-consistent (HC1) standard errors in pare
                     "Coefficients are on the log-odds scale.",
                     "* p<0.1; ** p<0.05; *** p<0.01.")
 
-# the \label at the start of each title ends up inside \caption{}, which is
-# where LaTeX expects it, so \ref{tab:logit-transfer} etc. resolve
 table_titles <- c(
   transfer   = "\\label{tab:logit-transfer}Logistic regression of current transfer of by-products to another business.",
   willing_tr = "\\label{tab:logit-willing}Logistic regression of stated willingness to supply by-products.")
@@ -423,10 +386,6 @@ for (outcome in c("transfer", "willing_tr")) {
   these_models <- models[paste(outcome, c("parsimonious", "full"))]
   names(these_models) <- c("Parsimonious", "Full")
   
-  # the three fit statistics modelsummary does not report by default, taken
-  # from fit_stats so they cannot disagree with the models. The rows are put
-  # in parsimonious-then-full order explicitly, so the table cannot silently
-  # pick them up the wrong way round.
   these_stats <- fit_stats %>%
     filter(model %in% paste(outcome, c("parsimonious", "full"))) %>%
     arrange(match(model, paste(outcome, c("parsimonious", "full"))))
@@ -440,9 +399,6 @@ for (outcome in c("transfer", "willing_tr")) {
                      sprintf("%.3f", these_stats$r2[2]),
                      sprintf("%.3f", these_stats$auc[2])))
   
-  # estimate and standard error on one line, as in the manuscript tables;
-  # writing {stars} inside the string also stops modelsummary adding its
-  # own significance note on top of table_note
   modelsummary(these_models,
                vcov      = "HC1",
                estimate  = "{estimate}{stars} ({std.error})",
@@ -460,11 +416,7 @@ for (outcome in c("transfer", "willing_tr")) {
                output   = table_files[[outcome]])
 }
 
-# multilevel table: the same call, with the random-effects lines added below.
-# The prior is placed on the between-town standard deviation, so the note says
-# standard deviation and not variance. The Chung reference is plain text here
-# because table exports mangle \citep; the hand-tidied tabs/tab_multilevel.tex
-# in the manuscript carries the proper citation.
+# multilevel table
 modelsummary(list(Multilevel = models[["multilevel"]]),
              estimate  = "{estimate}{stars} ({std.error})",
              statistic = NULL,
@@ -492,9 +444,6 @@ modelsummary(list(Multilevel = models[["multilevel"]]),
 #-------------------------------------------------------------------------------
 # 8.1. figure: the raw data by sector, with the model's odds ratios on top
 #-------------------------------------------------------------------------------
-# Both layers come from objects that already exist: the survey data for the
-# points, and the coefficients table from section 4 for the labels.
-
 plot_data <- businesses %>%
   select(sector, transfer, willing_tr) %>%
   pivot_longer(-sector, names_to = "outcome", values_to = "y") %>%
@@ -512,9 +461,6 @@ plot_proportions <- plot_data %>%
          hi = prop.test(yes, n)$conf.int[2]) %>%
   ungroup()
 
-# the odds-ratio labels, read off the coefficients table built in section 4.
-# They come from the parsimonious models, which is what the figure caption in
-# the paper has to say.
 plot_labels <- coefficients %>%
   filter(model %in% c("transfer parsimonious", "willing_tr parsimonious"),
          str_starts(term, "sector")) %>%
