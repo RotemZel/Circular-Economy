@@ -1,0 +1,4 @@
+raw_label,business_size,is_micro
+Tiny (up to 4 employees / up to NIS 1 million,Tiny (<=4 employees),True
+Small (5-20 employees / up to NIS 20 million,Small (5-20 employees),False
+Medium-sized business (11-100 employees / up to,Medium (11-100 employees),False

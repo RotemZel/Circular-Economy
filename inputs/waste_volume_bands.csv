@@ -1,0 +1,4 @@
+raw_label,band_number,short_label
+Less than 360 litres,1,<360 l
+"Between 360-1,100 litres a week",2,360-1100 l
+"More than 1,100 litres",3,>1100 l

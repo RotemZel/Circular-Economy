@@ -1,0 +1,18 @@
+raw_token,stream_label,stream_group
+plant_vegetable_and_fruit_scraps,Plant/vegetable/fruit scraps,organic
+meat_and_bone_scraps,Meat and bone scraps,organic
+dough_and_pastry_scraps,Dough and pastry scraps,organic
+cardboard_packaging,Cardboard packaging,fibre
+paper,Paper,fibre
+nylon_and_plastic_sheeting_packaging,Nylon/plastic sheeting packaging,plastic
+plastic_pet,Plastic (PET),plastic
+plastic_hdpe,Plastic (HDPE),plastic
+plastic_ldpe,Plastic (LDPE),plastic
+frying_oil,Frying oil,oils
+machine_oil,Machine oil,oils
+wood,Wood,durable
+metal,Metal,durable
+glass,Glass,durable
+tyres,Tyres,durable
+construction_waste,Construction waste,durable
+electronic_waste,Electronic waste,durable

@@ -1,0 +1,18 @@
+business_type,sector
+Catering,Food
+Food industry,Food
+Greengrocers,Food
+Supermarket,Food
+butcher,Food
+Other trade,Retail
+Paper products,Retail
+Garages,Services
+Hairdressers,Services
+Electrical,Services
+Building materials,Manufacturing
+Carpentry shops,Manufacturing
+Glass industry,Manufacturing
+Metal industry,Manufacturing
+Other industry,Manufacturing
+Textile industry,Manufacturing
+Agriculture,Manufacturing

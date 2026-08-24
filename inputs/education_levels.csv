@@ -1,0 +1,4 @@
+raw_label,education,is_tertiary
+Secondary,Secondary,False
+Post-secondary,Post-secondary,True
+Academic,Academic,True
