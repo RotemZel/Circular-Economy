@@ -1,69 +1,43 @@
-###############################################################################
-##  05_discovery_tables.R
-##
-##  How existing by-product arrangements were found, and whether the receiving
-##  business is in the same town. Two descriptive items, neither of which enters
-##  any model. They supply the evidence for the embeddedness argument in the
-##  Discussion: the local social network is not the channel through which
-##  by-product exchange is discovered, and most exchange leaves the town.
-##
-##  This runs on its own, after 02_build_analysis_frame.R. It used to be a block
-##  pasted into the middle of the analysis script, which meant it depended on
-##  objects created elsewhere.
-##
-##  Input : inputs/analysis_df.rds
-##  Output: outputs/tab_discovery.tex
-###############################################################################
+# 05_discovery_tables.R
+#
+# Describes how existing by-product arrangements were found (item 36) and
+# whether the receiving business is in the same town (item 29), as counts and
+# as percentages of the businesses with a coded answer to each item (item-36
+# answers that no pattern matched are left out), prints both to the console
+# and writes them stacked in one LaTeX table.
+#
+# Reads:  inputs/analysis_df.rds (written by 02_build_analysis_frame.R)
+# Writes: outputs/tab_discovery.tex
 
-library(dplyr)
-library(modelsummary)
-library(here)
+# 1. load the analysis table ----
 
-dir.create(here("outputs"), showWarnings = FALSE)
+businesses <- readRDS(here::here("inputs", "analysis_df.rds"))
 
-## `same_town` is TRUE/FALSE in the analysis table; give it the labels the
-## paper uses so the table reads the same way
-if (!file.exists(here("inputs", "analysis_df.rds"))) {
-  stop("inputs/analysis_df.rds not found under:\n  ", here(),
-       "\nRun 01_make_waste_tidy.R and 02_build_analysis_frame.R first.")
-}
+# the businesses that transfer a by-product (1) and those that do not (0)
+print(table(transfer = businesses$transfer))
 
-discovery <- readRDS(here("inputs", "analysis_df.rds")) %>%
-  mutate(same_town = factor(same_town, levels = c(TRUE, FALSE),
-                            labels = c("Same town", "Different town")))
+# 2. count the coded answers to each item and their share of the coded answers ----
 
-cat("\n########## DISCOVERY CHANNEL AND LOCALITY OF EXCHANGE ##########\n")
+discovery <- businesses |>
+  dplyr::transmute(
+    `Origin of the arrangement`          = found_via,
+    `Location of the receiving business` = factor(same_town, levels = c(TRUE, FALSE),
+                                                  labels = c("Same town", "Different town"))) |>
+  tidyr::pivot_longer(dplyr::everything(), names_to = "item", values_to = "answer",
+                      values_drop_na = TRUE) |>
+  dplyr::count(item, answer, name = "N") |>
+  dplyr::mutate(Percent = 100 * N / sum(N), .by = item)
 
-cat("\nhow the counterpart was found (item 36):\n")
-print(datasummary(found_via ~ N + Percent("col"), data = discovery,
-                  output = "data.frame"))
+print(as.data.frame(discovery))
 
-cat("\nis the receiving business in the same town? (item 29):\n")
-print(datasummary(same_town ~ N + Percent("col"), data = discovery,
-                  output = "data.frame"))
+# 3. write both items stacked in one LaTeX table ----
+# Each item's name is shown on its first row only.
 
-cat("\nclassified:", sum(!is.na(discovery$found_via)),
-    "| destination recorded:", sum(!is.na(discovery$same_town)),
-    "| businesses reporting an arrangement:", sum(discovery$transfer == 1, na.rm = TRUE), "\n")
-
-## the table used in the manuscript: the two items stacked in one block
-tab_discovery <- datasummary(
-  (`How the counterpart was found`      = found_via) +
-  (`Location of the receiving business`  = same_town) ~ N + Percent("col"),
-  data   = discovery,
-  output = "latex_tabular",
-  title  = paste("How existing by-product arrangements were found, and whether",
-                 "the receiving business lies in the same town."),
-  notes  = paste("Both items are asked only of businesses reporting an existing",
-                 "arrangement. The discovery item is free text, classified by the",
-                 "rule set out in Section~\\ref{sec:analytical}. Percentages are of",
-                 "the classified or recorded total, not of the full sample."))
-
-writeLines(tab_discovery, here("outputs", "tab_discovery.tex"))
-cat("\ntab_discovery.tex written to outputs/\n")
-
-## the three figures quoted in the Results and the Conclusions
-found_shares <- prop.table(table(discovery$found_via))
-cat("\ntaker-initiated:", round(100 * found_shares[["Taker approached the generator"]], 1), "%",
-    "| social tie:",     round(100 * found_shares[["Social tie or word of mouth"]], 1), "%",
-    "| same town:",      round(100 * mean(discovery$same_town == "Same town", na.rm = TRUE), 1), "%\n")
+discovery |>
+  dplyr::mutate(item = dplyr::if_else(duplicated(item), "", item)) |>
+  knitr::kable(format = "latex", booktabs = TRUE, digits = 1, linesep = "",
+               col.names = c("", "", "n", "%"),
+               caption = paste("Existing by-product arrangements: origin of the arrangement and",
+                               "location of the receiving business (percent of the businesses",
+                               "answering each item).")) |>
+  writeLines(here::here("outputs", "tab_discovery.tex"))
